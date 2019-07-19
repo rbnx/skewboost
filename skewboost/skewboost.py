@@ -50,6 +50,13 @@ class SkewBoost(object):
 
         return self
 
+    def predict(self, X):
+        y = np.zeros(len(X))
+        for i in np.nditer(np.nonzero(self.estimator_weights)):
+            y += self.estimators_[i].predict(X)
+
+        return np.sign(2 * y - 1)
+
     def _get_r_scores(self, X, y, rank_fn):
         scores = []
         for m in self.estimators_:
