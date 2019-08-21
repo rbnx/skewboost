@@ -1,5 +1,6 @@
 from sklearn.metrics import f1_score, roc_auc_score
 import numpy as np
+import dimod
 
 
 RANK_FUNCTIONS = {
@@ -29,6 +30,7 @@ class SkewBoost(object):
             gamma=1,
             rank_function='auc',
             **kwargs):
+        assert isinstance(sampler, dimod.Sampler)
         y = _check_spin_labels(y)
         preds = np.float64([_check_spin_labels(m.predict(X))
                             for m in self.estimators_])
@@ -37,7 +39,7 @@ class SkewBoost(object):
         rank_cb = RANK_FUNCTIONS[rank_function]
 
         qij = np.dot(preds, preds.T)
-        qij[np.diag_indices_from(qij)] = self._new_diag_v1(
+        qij[np.diag_indices_from(qij)] = self._diagonal_terms(
             X, y, preds, alpha, gamma, rank_cb)
 
         Q = {k: qij[k] for k in zip(*np.triu_indices(len(qij)))}
@@ -66,11 +68,7 @@ class SkewBoost(object):
 
         return np.array(scores)
 
-    def _old_diag(self, X, y, y_hat, alpha, *args, **kwargs):
-        return len(X) * 1. / (self.n_estimators ** 2) + \
-            alpha - 2 * np.dot(y_hat, y)
-
-    def _new_diag_v1(self, X, y, y_hat, alpha, gamma, rank_fn):
+    def _diagonal_terms(self, X, y, y_hat, alpha, gamma, rank_fn):
         scores = self._get_r_scores(X, y, rank_fn)
         s_mean = scores.mean()
         min_amp = scores.std() / 2
