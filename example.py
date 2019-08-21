@@ -52,3 +52,5 @@ skb.fit(
 
 # Do something cool with the new weights:
 print(skb.estimator_weights)
+# or make a prediction
+print(skb.predict([X_test[0]]))
